@@ -60,41 +60,32 @@ include(cmake/HandleGlobalBuildFlags.cmake) # Build flags
 ###############################################################################
 # Add components
 
-# Build CppUnitLite
-# add_subdirectory(CppUnitLite)
-
 # Build GTSAM library
 add_subdirectory(gtsam)
-
-# Build Tests
-# add_subdirectory(tests)
 
 # Build examples
 add_subdirectory(examples)
 
-# Build timing
-add_subdirectory(timing)
-
 # Build gtsam_unstable
-if (GTSAM_BUILD_UNSTABLE)
-    add_subdirectory(gtsam_unstable)
-endif()
+# if (GTSAM_BUILD_UNSTABLE)
+#    add_subdirectory(gtsam_unstable)
+# endif()
 
 # This is the new wrapper
-if(GTSAM_BUILD_PYTHON OR GTSAM_INSTALL_MATLAB_TOOLBOX)
+#if(GTSAM_BUILD_PYTHON OR GTSAM_INSTALL_MATLAB_TOOLBOX)
     # Need to set this for the wrap package so we don't use the default value.
-    set(WRAP_PYTHON_VERSION ${GTSAM_PYTHON_VERSION}
-        CACHE STRING "The Python version to use for wrapping")
+#    set(WRAP_PYTHON_VERSION ${GTSAM_PYTHON_VERSION}
+#        CACHE STRING "The Python version to use for wrapping")
     # Set the include directory for matlab.h
-    set(GTWRAP_INCLUDE_NAME "wrap")
-    add_subdirectory(wrap)
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/wrap/cmake")
-endif()
+#    set(GTWRAP_INCLUDE_NAME "wrap")
+#    add_subdirectory(wrap)
+#    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/wrap/cmake")
+#endif()
 
 # Python toolbox
-if(GTSAM_BUILD_PYTHON)
-    add_subdirectory(python)
-endif()
+#if(GTSAM_BUILD_PYTHON)
+#    add_subdirectory(python)
+#endif()
 
 # Matlab toolbox
 # if(GTSAM_INSTALL_MATLAB_TOOLBOX)
@@ -104,19 +95,6 @@ endif()
 # Install config and export files
 GtsamMakeConfigFile(GTSAM "${CMAKE_CURRENT_SOURCE_DIR}/gtsam_extra.cmake.in")
 export(TARGETS ${GTSAM_EXPORTED_TARGETS} FILE GTSAM-exports.cmake)
-
-if (GTSAM_BUILD_UNSTABLE)
-    GtsamMakeConfigFile(GTSAM_UNSTABLE "${CMAKE_CURRENT_SOURCE_DIR}/gtsam_extra.cmake.in")
-    export(TARGETS ${GTSAM_UNSTABLE_EXPORTED_TARGETS} FILE GTSAM_UNSTABLE-exports.cmake)
-endif()
-
-# Check for doxygen availability - optional dependency
-# find_package(Doxygen)
-
-# Doxygen documentation - enabling options in subfolder
-# if (DOXYGEN_FOUND)
-#     add_subdirectory(doc)
-# endif()
 
 # CMake Tools
 add_subdirectory(cmake)
