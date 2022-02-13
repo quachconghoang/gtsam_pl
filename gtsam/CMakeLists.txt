@@ -56,8 +56,8 @@ foreach(subdir ${gtsam_subdirs})
     # Build convenience libraries
     file(GLOB_RECURSE subdir_srcs "${subdir}/*.cpp" "${subdir}/*.h") # Include header files so they show up in Visual Studio
     list(REMOVE_ITEM subdir_srcs ${excluded_sources})
-	file(GLOB subdir_test_files "${subdir}/tests/*")
-	list(REMOVE_ITEM subdir_srcs ${subdir_test_files}) # Remove test files from sources compiled into library
+#	file(GLOB subdir_test_files "${subdir}/tests/*")
+#	list(REMOVE_ITEM subdir_srcs ${subdir_test_files}) # Remove test files from sources compiled into library
     gtsam_assign_source_folders("${subdir_srcs}") # Create MSVC structure
     set(${subdir}_srcs ${subdir_srcs})
 
