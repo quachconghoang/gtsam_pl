@@ -5,6 +5,3 @@ set (slam_excluded_headers #"")
 
 file(GLOB slam_headers "*.h")
 install(FILES ${slam_headers} DESTINATION include/gtsam/slam)
-
-# Build tests
-add_subdirectory(tests)
