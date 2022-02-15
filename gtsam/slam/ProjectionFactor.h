@@ -144,14 +144,18 @@ namespace gtsam {
             return reprojectionError;
           } else {
             PinholeCamera<CALIBRATION> camera(pose.compose(*body_P_sensor_), *K_);
-            return camera.project(point, H1, H2, boost::none) - measured_;
+            Point2 err = camera.project(point, H1, H2, boost::none) - measured_;
+            return err;
           }
         } else {
           PinholeCamera<CALIBRATION> camera(pose, *K_);
-//          std::cout << H1.value() << H2.value() << std::endl;
-//          Point2 err = camera.project(point, H1, H2, boost::none) - measured_;
-//          std::cout << err << std::endl;
-          return camera.project(point, H1, H2, boost::none) - measured_;
+          Point2 err = camera.project(point, H1, H2, boost::none) - measured_;
+//          if (H1.get_ptr() != NULL)
+//              std::cout << "\n Landmark: "<< DefaultKeyFormatter(this->key2())
+//                        << " Camera: " << DefaultKeyFormatter(this->key1())
+//                        << " H1:"<< H1->rows() << "x" << H1->cols()
+//                        << " H2:"<< H2->rows() << "x" << H2->cols() << std::endl;
+          return err;
         }
       } catch( CheiralityException& e) {
         if (H1) *H1 = Matrix::Zero(2,6);

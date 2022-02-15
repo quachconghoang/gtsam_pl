@@ -112,11 +112,11 @@ int main(int argc, char* argv[]) {
     Point3 corrupted_point = points[j] + Point3(-0.25, 0.20, 0.15);
     initialEstimate.insert<Point3>(Symbol('l', j), corrupted_point);
   }
-  initialEstimate.print("Initial Estimates:\n");
+//  initialEstimate.print("Initial Estimates:\n");
 
   /* Optimize the graph and print results */
   Values result = DoglegOptimizer(graph, initialEstimate).optimize();
-  result.print("Final results:\n");
+//  result.print("Final results:\n");
   cout << "initial error = " << graph.error(initialEstimate) << endl;
   cout << "final error = " << graph.error(result) << endl;
 
