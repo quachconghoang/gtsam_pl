@@ -30,7 +30,8 @@ using namespace gtsam;
 /* ************************************************************************* */
 int main(int argc, char* argv[]) {
   // Define the camera calibration parameters
-  Cal3_S2::shared_ptr K(new Cal3_S2(50.0, 50.0, 0.0, 50.0, 50.0));
+  Cal3_S2::shared_ptr K(new Cal3_S2(320.0, 320.0, 0.0, 320.0, 240.0));
+//  Cal3_S2::shared_ptr K(new Cal3_S2(50.0, 50.0, 0.0, 50.0, 50.0));
   // Define the camera observation noise model
   auto measurementNoise= noiseModel::Isotropic::Sigma(2, 1.0);  // one pixel in u and v
   // Create the set of ground-truth landmarks

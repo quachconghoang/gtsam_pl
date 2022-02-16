@@ -102,15 +102,15 @@ public:
 
     // uncalibrate to pixel coordinates
     Matrix2 Dpi_pn;
-    const Point2 pi = calibration().uncalibrate(pn, Dcal,
-        Dpose || Dpoint ? &Dpi_pn : 0);
+    const Point2 pi = calibration().uncalibrate(pn, Dcal, Dpose || Dpoint ? &Dpi_pn : 0);
 
-    // If needed, apply chain rule
-    if (Dpose)
-      *Dpose = Dpi_pn * *Dpose;
-    if (Dpoint)
-      *Dpoint = Dpi_pn * *Dpoint;
-
+// If needed, apply chain rule
+    if (Dpose)  *Dpose = Dpi_pn * *Dpose;
+    if (Dpoint) *Dpoint = Dpi_pn * *Dpoint;
+//  Dpi_pn = [ [fx, 0], [0, fy]]
+//    if (!Dpi_pn.hasNaN()) {std::cout << "Dpi_pn \n" << Dpi_pn << std::endl;}
+//    if (Dpose)    {*Dpose = Dpi_pn * *Dpose; std::cout << "Has Dpose: \n" << Dpose->matrix() << std::endl;}
+//    if (Dpoint)   {*Dpoint = Dpi_pn * *Dpoint; std::cout << "Has Dpoint: \n" << Dpoint->matrix() << std::endl;}
     return pi;
   }
 
