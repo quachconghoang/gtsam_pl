@@ -66,6 +66,9 @@ add_subdirectory(gtsam)
 # Build examples
 add_subdirectory(examples)
 
+add_subdirectory(CppUnitLite)
+
+
 # Build gtsam_unstable
 # if (GTSAM_BUILD_UNSTABLE)
 #    add_subdirectory(gtsam_unstable)
