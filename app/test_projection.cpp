@@ -1,25 +1,26 @@
 #include <gtsam/geometry/Point2.h>
+//#include <gtsam/geometry/Line3.h>
 #include <gtsam/inference/Symbol.h>
 #include <gtsam/slam/ProjectionFactor.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/DoglegOptimizer.h>
 #include <gtsam/nonlinear/Values.h>
 
-#include <vector>
-#include <thread>
+#include "LinesProjectionFactor.h"
 
-#include <pcl/common/common_headers.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/console/parse.h>
+#include <vector>
+//#include <thread>
+
+//#include <pcl/common/common_headers.h>
+//#include <pcl/features/normal_3d.h>
+//#include <pcl/io/pcd_io.h>
+//#include <pcl/visualization/pcl_visualizer.h>
+//#include <pcl/console/parse.h>
 
 using namespace std;
 using namespace gtsam;
 
 std::vector<gtsam::Point3> createPoints() {
-
-  // Create the set of ground-truth landmarks
   std::vector<gtsam::Point3> points;
   points.push_back(gtsam::Point3(10.0,10.0,10.0));
   points.push_back(gtsam::Point3(-10.0,10.0,10.0));
@@ -32,6 +33,24 @@ std::vector<gtsam::Point3> createPoints() {
 
   return points;
 }
+
+LineSegment getLineFrom2Point(const Point3 & p1, const Point3 & p2)
+{
+    LineSegment ls; ls.resize(6);
+    ls << p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z();
+    return ls;
+}
+
+Polylines createLines(const std::vector<gtsam::Point3> & p){
+    Polylines poly;
+    poly.push_back(getLineFrom2Point(p[0], p[1]));
+    poly.push_back(getLineFrom2Point(p[2], p[3]));
+    poly.push_back(getLineFrom2Point(p[4], p[5]));
+    poly.push_back(getLineFrom2Point(p[6], p[7]));
+    poly.push_back(getLineFrom2Point(p[8], p[9]));
+    return poly;
+};
+
 
 /* ************************************************************************* */
 std::vector<gtsam::Pose3> createPoses(
@@ -54,61 +73,72 @@ std::vector<gtsam::Pose3> createPoses(
 
 /* ************************************************************************* */
 int main(int argc, char* argv[]) {
-  // Define the camera calibration parameters
-  Cal3_S2::shared_ptr K(new Cal3_S2(320.0, 320.0, 0.0, 320.0, 240.0));
+    // Define the camera calibration parameters
+    Cal3_S2::shared_ptr K(new Cal3_S2(320.0, 320.0, 0.0, 320.0, 240.0));
 //  Cal3_S2::shared_ptr K(new Cal3_S2(50.0, 50.0, 0.0, 50.0, 50.0));
-  // Define the camera observation noise model
-  auto measurementNoise= noiseModel::Isotropic::Sigma(2, 1.0);  // one pixel in u and v
-  // Create the set of ground-truth landmarks
-  vector<Point3> points = createPoints();
-  // Create the set of ground-truth poses
-  vector<Pose3> poses = createPoses();
-  // Create a factor graph
-  NonlinearFactorGraph graph;
-  // Add a prior on pose x1. This indirectly specifies where the origin is.
-  auto poseNoise = noiseModel::Diagonal::Sigmas(
-          (Vector(6) << Vector3::Constant(0.1), Vector3::Constant(0.3)).finished());  // 30cm std on x,y,z 0.1 rad on roll,pitch,yaw
-  graph.addPrior(Symbol('x', 0), poses[0], poseNoise);  // add directly to graph
+    // Define the camera observation noise model
+    auto measurementNoise= noiseModel::Isotropic::Sigma(2, 1.0);  // one pixel in u and v
+    // Create the set of ground-truth landmarks
+    vector<Point3> points = createPoints();
+    Polylines poly = createLines(points);
+    // Create the set of ground-truth poses
+    vector<Pose3> poses = createPoses();
+    // Create a factor graph
+    NonlinearFactorGraph graph;
+    // Add a prior on pose x1. This indirectly specifies where the origin is.
+    auto poseNoise = noiseModel::Diagonal::Sigmas(
+            (Vector(6) << Vector3::Constant(0.1), Vector3::Constant(0.3)).finished());  // 30cm std on x,y,z 0.1 rad on roll,pitch,yaw
+    graph.addPrior(Symbol('x', 0), poses[0], poseNoise);  // add directly to graph
 
-  // Simulated measurements from each camera pose, adding them to the factor graph
-  for (size_t i = 0; i < poses.size(); ++i) {
-    PinholeCamera<Cal3_S2> camera(poses[i], *K);
-    for (size_t j = 0; j < points.size(); ++j) {
-      Point2 measurement = camera.project(points[j]);
-      graph.emplace_shared<GenericProjectionFactor<Pose3, Point3, Cal3_S2> >(
-          measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
+    // Simulated measurements from each camera pose, adding them to the factor graph
+    for (size_t i = 0; i < poses.size(); ++i) {
+        PinholeCamera<Cal3_S2> camera(poses[i], *K);
+        for (size_t j = 0; j < points.size(); ++j) {
+            Point2 measurement = camera.project(points[j]);
+            graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(
+                    measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
+        }
     }
-  }
 
-  // Because the structure-from-motion problem has a scale ambiguity, the
-  // problem is still under-constrained Here we add a prior on the position of
-  // the first landmark. This fixes the scale by indicating the distance between
-  // the first camera and the first landmark. All other landmark positions are
-  // interpreted using this scale.
-  auto pointNoise = noiseModel::Isotropic::Sigma(3, 0.1);
-  graph.addPrior(Symbol('l', 0), points[0],pointNoise);  // add directly to graph
+    // Because the structure-from-motion problem has a scale ambiguity, the
+    // problem is still under-constrained Here we add a prior on the position of
+    // the first landmark. This fixes the scale by indicating the distance between
+    // the first camera and the first landmark. All other landmark positions are
+    // interpreted using this scale.
+    auto pointNoise = noiseModel::Isotropic::Sigma(3, 0.1);
+//    auto lineNoise = noiseModel::Isotropic::Sigma(6,0.1);
+    graph.addPrior(Symbol('l', 0), points[0],pointNoise);  // add directly to graph
 //  graph.print("Factor Graph:\n");
 
-  // Create the data structure to hold the initial estimate to the solution
-  // Intentionally initialize the variables off from the ground truth
-  Values initialEstimate;
-  for (size_t i = 0; i < poses.size(); ++i) {
-    auto corrupted_pose = poses[i].compose(Pose3(Rot3::Rodrigues(-0.1, 0.2, 0.25), Point3(0.05, -0.10, 0.20)));
-    initialEstimate.insert(Symbol('x', i), corrupted_pose);
-  }
-  for (size_t j = 0; j < points.size(); ++j) {
-    Point3 corrupted_point = points[j] + Point3(-0.25, 0.20, 0.15);
-    initialEstimate.insert<Point3>(Symbol('l', j), corrupted_point);
-  }
+    // Create the data structure to hold the initial estimate to the solution
+    // Intentionally initialize the variables off from the ground truth
+    Values initialEstimate;
+    for (size_t i = 0; i < poses.size(); ++i) {
+        auto corrupted_pose = poses[i].compose(Pose3(Rot3::Rodrigues(-0.1, 0.2, 0.25), Point3(0.05, -0.10, 0.20)));
+        initialEstimate.insert(Symbol('x', i), corrupted_pose);
+    }
+    for (size_t j = 0; j < points.size(); ++j) {
+        Point3 corrupted_point = points[j] + Point3(-0.25, 0.20, 0.15);
+        initialEstimate.insert<Point3>(Symbol('l', j), corrupted_point);
+    }
+
+//    Point3 err_ = Point3(-0.25, 0.20, 0.15);
+    Vector err(6); err << -0.25, 0.20, 0.15,-0.25, 0.20, 0.15;
+    for (size_t k = 0; k < poly.size(); ++k) {
+        LineSegment corrupted_line = poly[k] + err;
+//        Point3 corrupted_point = points[j] + Point3(-0.25, 0.20, 0.15);
+        initialEstimate.insert<LineSegment>(Symbol('s', k), corrupted_line);
+    }
+
 //  initialEstimate.print("Initial Estimates:\n");
 
-  /* Optimize the graph and print results */
-  Values result = DoglegOptimizer(graph, initialEstimate).optimize();
+    /* Optimize the graph and print results */
+    Values result = DoglegOptimizer(graph, initialEstimate).optimize();
 //  result.print("Final results:\n");
-  cout << "initial error = " << graph.error(initialEstimate) << endl;
-  cout << "final error = " << graph.error(result) << endl;
+    cout << "initial error = " << graph.error(initialEstimate) << endl;
+    cout << "final error = " << graph.error(result) << endl;
 
-  return 0;
+    return 0;
 }
 /* ************************************************************************* */
 
