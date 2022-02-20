@@ -11,7 +11,7 @@ set (excluded_examples
 
 # Install Open3D at /usr/local/ ???
 gtsamAddExamplesGlob("*.cpp" "${excluded_examples}" "gtsam;${Boost_PROGRAM_OPTIONS_LIBRARY}")
-find_package(Open3D REQUIRED)
+# find_package(Open3D REQUIRED)
 #add_executable(SFMTrace SFMTrace.cpp)
 #target_link_libraries(SFMTrace "Open3D::Open3D;gtsam;${Boost_PROGRAM_OPTIONS_LIBRARY}")
 #target_link_libraries(SFMTrace PRIVATE Open3D::Open3D)
