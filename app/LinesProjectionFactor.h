@@ -18,13 +18,82 @@
 #include <gtsam/geometry/Cal3_S2.h>
 #include <boost/optional.hpp>
 
+namespace gtsam{
+    template<class VALUE1, class VALUE2>
+    class NoiseModelFactorX: public NoiseModelFactor {
+
+    public:
+        typedef VALUE1 X1;
+        typedef VALUE2 X2;
+    protected:
+
+        typedef NoiseModelFactor Base;
+        typedef NoiseModelFactorX<VALUE1, VALUE2> This;
+
+    public:
+        NoiseModelFactorX() {}
+
+        /**
+         * Constructor
+         * @param noiseModel shared pointer to noise model
+         * @param j1 key of the first variable
+         * @param j2 key of the second variable
+         */
+        NoiseModelFactorX(const SharedNoiseModel& noiseModel, Key j1, Key j2) :
+                Base(noiseModel, cref_list_of<2>(j1)(j2)) {}
+
+        ~NoiseModelFactorX() override {}
+
+        /** methods to retrieve both keys */
+        inline Key key1() const { return keys_[0];  }
+        inline Key key2() const {  return keys_[1];  }
+
+        /** Calls the 2-key specific version of evaluateError, which is pure virtual
+         * so must be implemented in the derived class. */
+        Vector unwhitenedError(const Values& x, boost::optional<std::vector<Matrix>&> H = boost::none) const override {
+            if(this->active(x)) {
+                const X1& x1 = x.at<X1>(keys_[0]);
+                const X2& x2 = x.at<X2>(keys_[1]);
+                if(H) {
+                    return evaluateError(x1, x2, (*H)[0], (*H)[1]);
+                } else {
+                    return evaluateError(x1, x2);
+                }
+            } else {
+                return Vector::Zero(this->dim());
+            }
+        }
+
+        /**
+         *  Override this method to finish implementing a binary factor.
+         *  If any of the optional Matrix reference arguments are specified, it should compute
+         *  both the function evaluation and its derivative(s) in X1 (and/or X2).
+         */
+        virtual Vector
+        evaluateError(const X1&, const X2&,
+                      boost::optional<Matrix&> H1 = boost::none,
+                      boost::optional<Matrix&> H2 = boost::none) const = 0;
+
+    private:
+
+        /** Serialization function */
+        friend class boost::serialization::access;
+        template<class ARCHIVE>
+        void serialize(ARCHIVE & ar, const unsigned int /*version*/) {
+            ar & boost::serialization::make_nvp("NoiseModelFactor",
+                                                boost::serialization::base_object<Base>(*this));
+        }
+    }; // \class NoiseModelFactor XXX
+
+}
+
 namespace gtsam {
     typedef Vector6 LineSegment;
     typedef std::vector<LineSegment> Polylines;
+//    typedef Point3 LANDMARK_NOISE;
 
-    template <class POSE = Pose3, class LANDMARK = Point3,
-            class CALIBRATION = Cal3_S2>
-    class LinesProjectionFactor: public NoiseModelFactor2<POSE, LANDMARK> {
+    template <class POSE = Pose3, class LANDMARK = Point3, class CALIBRATION = Cal3_S2>
+    class LinesProjectionFactor: public NoiseModelFactorX<POSE, LANDMARK> {
     protected:
 
         // Keep a copy of measurement and calibration for I/O
@@ -39,7 +108,7 @@ namespace gtsam {
     public:
 
         /// shorthand for base class type
-        typedef NoiseModelFactor2<POSE, LANDMARK> Base;
+        typedef NoiseModelFactorX<POSE, LANDMARK> Base;
 
         /// shorthand for this class
         typedef LinesProjectionFactor<POSE, LANDMARK, CALIBRATION> This;
