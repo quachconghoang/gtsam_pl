@@ -106,7 +106,6 @@ int main(int argc, char* argv[]) {
     // the first camera and the first landmark. All other landmark positions are
     // interpreted using this scale.
     auto pointNoise = noiseModel::Isotropic::Sigma(3, 0.1);
-//    auto lineNoise = noiseModel::Isotropic::Sigma(6,0.1);
     graph.addPrior(Symbol('l', 0), points[0],pointNoise);  // add directly to graph
 //  graph.print("Factor Graph:\n");
 
@@ -118,17 +117,16 @@ int main(int argc, char* argv[]) {
         initialEstimate.insert(Symbol('x', i), corrupted_pose);
     }
     for (size_t j = 0; j < points.size(); ++j) {
-        Point3 corrupted_point = points[j] + Point3(-0.25, 0.20, 0.15);
+        Point3 corrupted_point = points[j] + 0.25*Eigen::VectorXd::Random(3);
         initialEstimate.insert<Point3>(Symbol('l', j), corrupted_point);
     }
 
-//    Point3 err_ = Point3(-0.25, 0.20, 0.15);
-    Vector err(6); err << -0.25, 0.20, 0.15,-0.25, 0.20, 0.15;
-    for (size_t k = 0; k < poly.size(); ++k) {
-        LineSegment corrupted_line = poly[k] + err;
-//        Point3 corrupted_point = points[j] + Point3(-0.25, 0.20, 0.15);
-        initialEstimate.insert<LineSegment>(Symbol('s', k), corrupted_line);
-    }
+//    for (size_t k = 0; k < poly.size(); ++k) {
+//        Eigen::VectorXd err = 0.25 * Eigen::VectorXd::Random(6);
+//        LineSegment corrupted_line = poly[k] + err;
+//        cout << corrupted_line.transpose() << std::endl;
+//        initialEstimate.insert<LineSegment>(Symbol('l', k), corrupted_line);
+//    }
 
 //  initialEstimate.print("Initial Estimates:\n");
 

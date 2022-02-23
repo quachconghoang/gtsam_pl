@@ -19,10 +19,8 @@
 #include <boost/optional.hpp>
 
 namespace gtsam {
-    typedef Eigen::VectorXd LineSegment;
+    typedef Vector6 LineSegment;
     typedef std::vector<LineSegment> Polylines;
-//    typedef std::vector<Point3> LineSegment;
-//    typedef std::vector<Point3,Point3> LineSeg;
 
     template <class POSE = Pose3, class LANDMARK = Point3,
             class CALIBRATION = Cal3_S2>
@@ -70,25 +68,6 @@ namespace gtsam {
                 Base(model, poseKey, pointKey), measured_(measured), K_(K), body_P_sensor_(body_P_sensor),
                 throwCheirality_(false), verboseCheirality_(false) {}
 
-        /**
-         * Constructor with exception-handling flags
-         * TODO: Mark argument order standard (keys, measurement, parameters)
-         * @param measured is the 2 dimensional location of point in image (the measurement)
-         * @param model is the standard deviation
-         * @param poseKey is the index of the camera
-         * @param pointKey is the index of the landmark
-         * @param K shared pointer to the constant calibration
-         * @param throwCheirality determines whether Cheirality exceptions are rethrown
-         * @param verboseCheirality determines whether exceptions are printed for Cheirality
-         * @param body_P_sensor is the transform from body to sensor frame  (default identity)
-         */
-        LinesProjectionFactor(const Point2& measured, const SharedNoiseModel& model,
-                              Key poseKey, Key pointKey, const boost::shared_ptr<CALIBRATION>& K,
-                              bool throwCheirality, bool verboseCheirality,
-                              boost::optional<POSE> body_P_sensor = boost::none) :
-                Base(model, poseKey, pointKey), measured_(measured), K_(K), body_P_sensor_(body_P_sensor),
-                throwCheirality_(throwCheirality), verboseCheirality_(verboseCheirality) {}
-
         /** Virtual destructor */
         ~LinesProjectionFactor() override {}
 
@@ -121,9 +100,11 @@ namespace gtsam {
         }
 
         /// Evaluate error h(x)-z and optionally derivatives
-        Vector evaluateError(const Pose3& pose, const Point3& point,
-                             boost::optional<Matrix&> H1 = boost::none, boost::optional<Matrix&> H2 = boost::none) const override {
+        Vector evaluateError(const Pose3& pose, const Point3 & ls,
+                             boost::optional<Matrix&> H1 = boost::none,
+                             boost::optional<Matrix&> H2 = boost::none) const override {
             try {
+                const Point3 point = Point3(ls[0], ls[1], ls[2]);
                 if(body_P_sensor_) {
                     if(H1) {
                         gtsam::Matrix H0;
@@ -144,11 +125,11 @@ namespace gtsam {
             } catch( CheiralityException& e) {
                 if (H1) *H1 = Matrix::Zero(2,6);
                 if (H2) *H2 = Matrix::Zero(2,3);
-                if (verboseCheirality_)
-                    std::cout << e.what() << ": Landmark "<< DefaultKeyFormatter(this->key2()) <<
-                              " moved behind camera " << DefaultKeyFormatter(this->key1()) << std::endl;
-                if (throwCheirality_)
-                    throw CheiralityException(this->key2());
+//                if (verboseCheirality_)
+//                    std::cout << e.what() << ": Landmark "<< DefaultKeyFormatter(this->key2()) <<
+//                              " moved behind camera " << DefaultKeyFormatter(this->key1()) << std::endl;
+//                if (throwCheirality_)
+//                    throw CheiralityException(this->key2());
             }
             return Vector2::Constant(2.0 * K_->fx());
         }
