@@ -47,7 +47,7 @@ Polylines createLines(const std::vector<gtsam::Point3> & p){
     poly.push_back(getLineFrom2Point(p[2], p[3]));
     poly.push_back(getLineFrom2Point(p[4], p[5]));
     poly.push_back(getLineFrom2Point(p[6], p[7]));
-    poly.push_back(getLineFrom2Point(p[8], p[9]));
+    //poly.push_back(getLineFrom2Point(p[8], p[9]));
     return poly;
 };
 
