@@ -13,6 +13,14 @@ using namespace gtsam;
 Matrix kTestMatrix = (Matrix23() << 11,12,13,21,22,23).finished();
 
 int main(int argc, char* argv[]) {
+	
+	gtsam::Pose3 initPose = gtsam::Pose3(gtsam::Rot3::Ypr(M_PI / 2, 0, -M_PI / 2), gtsam::Point3(30, 0, 0));
+	Cal3_S2::shared_ptr K(new Cal3_S2(320.0, 320.0, 0.0, 320.0, 240.0));
+	PinholeCamera<Cal3_S2> camera(initPose, *K);
+
+
+
+
     OptionalJacobian<2, 6> Dpose(Matrix(2,6).setZero());
     OptionalJacobian<2, FixedDimension<Point3>::value> Dpoint(Matrix(2,3).setZero());
 
@@ -21,11 +29,7 @@ int main(int argc, char* argv[]) {
     testMat.setZero();
     cout << testMat << endl;
     cout << kTestMatrix << endl;
-//    Eigen::Matrix<double, 2, 3> xxx;
-//    std::cout << xxx;
-//    Dpose.
-//    Dpose->setZero();
-    std::cout << Dpose.operator bool();
+
 
     if(Dpose)   cout << "Has Dpose: \n" << Dpose->matrix() << endl;
     if(Dpoint)  cout << "Has Dpoint: \n" << Dpoint->matrix() << endl;

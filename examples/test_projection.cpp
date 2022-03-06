@@ -90,6 +90,8 @@ int main(int argc, char* argv[]) {
         PinholeCamera<Cal3_S2> camera(poses[i], *K);
         for (size_t j = 0; j < points.size(); ++j) {
             Point2 measurement = camera.project(points[j]);
+			/*graph.emplace_shared<GenericProjectionFactor<Pose3, Point3, Cal3_S2> >(
+				measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);*/
             graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(
                     measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
         }

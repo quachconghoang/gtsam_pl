@@ -6,7 +6,7 @@ set (excluded_examples
     SFMExampleExpressions*.cpp
     SFMExample_SmartFactor*.cpp
     StereoVOExample*.cpp
-    CameraResectioning.cpp SFMTrace.cpp
+    CameraResectioning.cpp
 )
 
 # Install Open3D at /usr/local/ ???
