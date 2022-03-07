@@ -25,7 +25,7 @@ namespace gtsam {
 
 /* ************************************************************************* */
 Matrix26 PinholeBase::Dpose(const Point2& pn, double d) {
-  // optimized version of derivatives, see CalibratedCamera.nb
+  // optimized version of derivatives, see CalibratedCamera.nb @HOANGQC: pn = projected normalize; d=1/z (z-in-camera view) (or scale factor)
   const double u = pn.x(), v = pn.y();
   double uv = u * v, uu = u * u, vv = v * v;
   Matrix26 Dpn_pose;
@@ -116,7 +116,7 @@ pair<Point2, bool> PinholeBase::projectSafe(const Point3& pw) const {
 Point2 PinholeBase::project2(const Point3& point, OptionalJacobian<2, 6> Dpose,
     OptionalJacobian<2, 3> Dpoint) const {
 
-  Matrix3 Rt; // calculated by transformTo if needed
+  Matrix3 Rt; // calculated by transformTo if needed @HOANGQC: WTF
   const Point3 q = pose().transformTo(point, boost::none, Dpoint ? &Rt : 0);
 #ifdef GTSAM_THROW_CHEIRALITY_EXCEPTION
   if (q.z() <= 0)
