@@ -20,58 +20,75 @@
 using namespace std;
 using namespace gtsam;
 
-std::vector<gtsam::Point3> createPoints() {
-  std::vector<gtsam::Point3> points;
-  points.push_back(gtsam::Point3(10.0,10.0,10.0));
-  points.push_back(gtsam::Point3(-10.0,10.0,10.0));
-  points.push_back(gtsam::Point3(-10.0,-10.0,10.0));
-  points.push_back(gtsam::Point3(10.0,-10.0,10.0));
-  points.push_back(gtsam::Point3(10.0,10.0,-10.0));
-  points.push_back(gtsam::Point3(-10.0,10.0,-10.0));
-  points.push_back(gtsam::Point3(-10.0,-10.0,-10.0));
-  points.push_back(gtsam::Point3(10.0,-10.0,-10.0));
+//std::vector<gtsam::Point3> createPoints() {
+//  std::vector<gtsam::Point3> points;
+//  points.push_back(gtsam::Point3(10.0,10.0,10.0));
+//  points.push_back(gtsam::Point3(-10.0,10.0,10.0));
+//  points.push_back(gtsam::Point3(-10.0,-10.0,10.0));
+//  points.push_back(gtsam::Point3(10.0,-10.0,10.0));
+//  points.push_back(gtsam::Point3(10.0,10.0,-10.0));
+//  points.push_back(gtsam::Point3(-10.0,10.0,-10.0));
+//  points.push_back(gtsam::Point3(-10.0,-10.0,-10.0));
+//  points.push_back(gtsam::Point3(10.0,-10.0,-10.0));
+//
+//  return points;
+//}
 
-  return points;
-}
-
-LineSegment getLineFrom2Point(const Point3 & p1, const Point3 & p2)
-{
-    LineSegment ls; ls.resize(6);
-    ls << p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z();
-    return ls;
-}
-
-Polylines createLines(const std::vector<gtsam::Point3> & p){
-    Polylines poly;
-    poly.push_back(getLineFrom2Point(p[0], p[1]));
-    poly.push_back(getLineFrom2Point(p[2], p[3]));
-    poly.push_back(getLineFrom2Point(p[4], p[5]));
-    poly.push_back(getLineFrom2Point(p[6], p[7]));
-    //poly.push_back(getLineFrom2Point(p[8], p[9]));
-    return poly;
-};
-
-
-/* ************************************************************************* */
+//LineSegment getLineFrom2Point(const Point3 & p1, const Point3 & p2)
+//{
+//    LineSegment ls; ls.resize(6);
+//    ls << p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z();
+//    return ls;
+//}
+//
+//Polylines createLines(const std::vector<gtsam::Point3> & p){
+//    Polylines poly;
+//    poly.push_back(getLineFrom2Point(p[0], p[1]));
+//    poly.push_back(getLineFrom2Point(p[2], p[3]));
+//    poly.push_back(getLineFrom2Point(p[4], p[5]));
+//    poly.push_back(getLineFrom2Point(p[6], p[7]));
+//    //poly.push_back(getLineFrom2Point(p[8], p[9]));
+//    return poly;
+//};
+//
 std::vector<gtsam::Pose3> createPoses(
             const gtsam::Pose3& init = gtsam::Pose3(gtsam::Rot3::Ypr(M_PI/2,0,-M_PI/2), gtsam::Point3(30, 0, 0)),
             const gtsam::Pose3& delta = gtsam::Pose3(gtsam::Rot3::Ypr(0,-M_PI/4,0), gtsam::Point3(sin(M_PI/4)*30, 0, 30*(1-sin(M_PI/4)))),
             int steps = 8) {
-
-  // Create the set of ground-truth poses
-  // Default values give a circular trajectory, radius 30 at pi/4 intervals, always facing the circle center
-  std::vector<gtsam::Pose3> poses;
-  int i = 1;
-  poses.push_back(init);
-  for(; i < steps; ++i) {
-    poses.push_back(poses[i-1].compose(delta));
-  }
-
-  return poses;
+	std::vector<gtsam::Pose3> poses;
+	int i = 1;
+	poses.push_back(init);
+	for (; i < steps; ++i)
+		poses.push_back(poses[i - 1].compose(delta));
+	return poses;
 }
 
+int main(int argc, char* argv[]) {
+	Cal3_S2::shared_ptr K(new Cal3_S2(320.0, 320.0, 0.0, 320.0, 240.0));
+	gtsam::Pose3 pose_init = gtsam::Pose3(gtsam::Rot3::Ypr(M_PI / 2, 0, -M_PI / 2), gtsam::Point3(20, 0, 0));
+	// rotation [0 0 -1] [1 0 0] [0 -1 0] 
+	std::cout << pose_init.matrix() << std::endl;
+	PinholeCamera<Cal3_S2> camera(pose_init, *K);
 
-/* ************************************************************************* */
+	Point3 p3 = gtsam::Point3(10.0, 0.0, 0.0);
+	//Point3 p3e = gtsam::Point3(10.0, 1.0, 0.0);
+	//Point2 measurement = camera.project(p3);
+	//std::cout << p3 << std::endl << measurement << std::endl;
+	//std::cout << camera.project(p3) << std::endl << camera.project(p3e) << std::endl;
+
+	gtsam::Matrix H0;
+	gtsam::Matrix H1 = Matrix::Zero(2, 6);
+	gtsam::Matrix H2 = Matrix::Zero(2, 3);
+
+	Point2 m = camera.project(p3, H1, H2);
+	std::cout << "Default : \n" << m << std::endl 
+		<< "H1:\n" << H1 << std::endl 
+		<< "H2:\n" << H2;
+
+
+}
+
+/*  
 int main(int argc, char* argv[]) {
     // Define the camera calibration parameters
     Cal3_S2::shared_ptr K(new Cal3_S2(320.0, 320.0, 0.0, 320.0, 240.0));
@@ -90,8 +107,8 @@ int main(int argc, char* argv[]) {
         PinholeCamera<Cal3_S2> camera(poses[i], *K);
         for (size_t j = 0; j < points.size(); ++j) {
             Point2 measurement = camera.project(points[j]);
-			/*graph.emplace_shared<GenericProjectionFactor<Pose3, Point3, Cal3_S2> >(
-				measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);*/
+			//graph.emplace_shared<GenericProjectionFactor<Pose3, Point3, Cal3_S2> >(
+			//	measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
             graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(
                     measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
         }
@@ -127,7 +144,7 @@ int main(int argc, char* argv[]) {
 
 //  initialEstimate.print("Initial Estimates:\n");
 
-    /* Optimize the graph and print results */
+    //Optimize the graph and print results
     Values result = DoglegOptimizer(graph, initialEstimate).optimize();
 //  result.print("Final results:\n");
     cout << "initial error = " << graph.error(initialEstimate) << endl;
@@ -135,6 +152,6 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-/* ************************************************************************* */
+*/
 
 
