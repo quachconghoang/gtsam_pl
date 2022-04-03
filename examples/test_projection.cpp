@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 	gtsam::Matrix H1 = Matrix::Zero(2, 6);
 	gtsam::Matrix H2 = Matrix::Zero(2, 3);
 
-	//Point2 m = camera.project(pw, H1, H2);
+	Point2 m = camera.project(pw, H1, H2);
 	//std::cout << "Default : \n" << m << std::endl 
 	//	<< "H1:\n" << H1 << std::endl 
 	//	<< "H2:\n" << H2 << std::endl;
@@ -116,10 +116,22 @@ int main(int argc, char* argv[]) {
 	gtsam::Matrix3 Rt = camera.pose().rotation().matrix().transpose();
 	const Point3 q = camera.pose().transformTo(pw);
 	const Point2 pn = camera.Project(q);
-	std::cout << "PN : \n" << pn << std::endl;
+
+
 	const double d = 1.0 / q.z();
 	Dpose = _Dpose(pn, d);
 	Dpoint = _Dpoint(pn, d, Rt);
+
+	Matrix2 Dpi_pn;
+	Matrix25 Dcal;
+	Dpi_pn << 320, 0, 0, 320;
+	const Point2 pi = camera.calibration().uncalibrate(pn, Dcal, &Dpi_pn);
+
+	std::cout	<< "Default: \n" << m << std::endl
+				<< "MOD: \n" << pi << std::endl;
+
+	//const Point2 pi = calibration().uncalibrate(pn, Dcal, Dpose || Dpoint ? &Dpi_pn : 0);
+
 	
 	//getch();
 }
