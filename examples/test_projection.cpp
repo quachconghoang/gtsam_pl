@@ -7,6 +7,9 @@
 #include <gtsam/nonlinear/Values.h>
 
 #include "LinesProjectionFactor.h"
+#include <gtsam/geometry/PinholeCamera.h>
+#include <gtsam/geometry/PinholePose.h>
+#include <gtsam/geometry/CalibratedCamera.h>
 
 #include <vector>
 //#include <thread>
@@ -51,6 +54,7 @@ using namespace gtsam;
 //    return poly;
 //};
 //
+
 std::vector<gtsam::Pose3> createPoses(
             const gtsam::Pose3& init = gtsam::Pose3(gtsam::Rot3::Ypr(M_PI/2,0,-M_PI/2), gtsam::Point3(30, 0, 0)),
             const gtsam::Pose3& delta = gtsam::Pose3(gtsam::Rot3::Ypr(0,-M_PI/4,0), gtsam::Point3(sin(M_PI/4)*30, 0, 30*(1-sin(M_PI/4)))),
@@ -63,6 +67,28 @@ std::vector<gtsam::Pose3> createPoses(
 	return poses;
 }
 
+Matrix26 _Dpose(const Point2& pn, double d) {
+	const double u = pn.x(), v = pn.y();
+	double uv = u * v, uu = u * u, vv = v * v;
+	Matrix26 Dpn_pose;
+	Dpn_pose << 
+		uv, -1 - uu, v, -d, 0, d * u, 
+		1 + vv, -uv, -u, 0, -d, d * v;
+	return Dpn_pose;
+}
+
+/* ************************************************************************* */
+Matrix23 _Dpoint(const Point2& pn, double d, const Matrix3& Rt) {
+	// optimized version of derivatives, see CalibratedCamera.nb
+	const double u = pn.x(), v = pn.y();
+	Matrix23 Dpn_point;
+	Dpn_point << //
+		Rt(0, 0) - u * Rt(2, 0), Rt(0, 1) - u * Rt(2, 1), Rt(0, 2) - u * Rt(2, 2), //
+		Rt(1, 0) - v * Rt(2, 0), Rt(1, 1) - v * Rt(2, 1), Rt(1, 2) - v * Rt(2, 2);
+	Dpn_point *= d;
+	return Dpn_point;
+}
+
 int main(int argc, char* argv[]) {
 	Cal3_S2::shared_ptr K(new Cal3_S2(320.0, 320.0, 0.0, 320.0, 240.0));
 	gtsam::Pose3 pose_init = gtsam::Pose3(gtsam::Rot3::Ypr(M_PI / 2, 0, -M_PI / 2), gtsam::Point3(20, 0, 0));
@@ -70,22 +96,32 @@ int main(int argc, char* argv[]) {
 	std::cout << pose_init.matrix() << std::endl;
 	PinholeCamera<Cal3_S2> camera(pose_init, *K);
 
-	Point3 p3 = gtsam::Point3(10.0, 0.0, 0.0);
+	Point3 pw = gtsam::Point3(10.0, 0.0, 0.0);
 	//Point3 p3e = gtsam::Point3(10.0, 1.0, 0.0);
 	//Point2 measurement = camera.project(p3);
 	//std::cout << p3 << std::endl << measurement << std::endl;
 	//std::cout << camera.project(p3) << std::endl << camera.project(p3e) << std::endl;
 
-	gtsam::Matrix H0;
 	gtsam::Matrix H1 = Matrix::Zero(2, 6);
 	gtsam::Matrix H2 = Matrix::Zero(2, 3);
 
-	Point2 m = camera.project(p3, H1, H2);
-	std::cout << "Default : \n" << m << std::endl 
-		<< "H1:\n" << H1 << std::endl 
-		<< "H2:\n" << H2;
+	//Point2 m = camera.project(pw, H1, H2);
+	//std::cout << "Default : \n" << m << std::endl 
+	//	<< "H1:\n" << H1 << std::endl 
+	//	<< "H2:\n" << H2 << std::endl;
+	
+	gtsam::Matrix Dpose = Matrix::Zero(2, 6);
+	gtsam::Matrix Dpoint = Matrix::Zero(2, 3);
 
-
+	gtsam::Matrix3 Rt = camera.pose().rotation().matrix().transpose();
+	const Point3 q = camera.pose().transformTo(pw);
+	const Point2 pn = camera.Project(q);
+	std::cout << "PN : \n" << pn << std::endl;
+	const double d = 1.0 / q.z();
+	Dpose = _Dpose(pn, d);
+	Dpoint = _Dpoint(pn, d, Rt);
+	
+	//getch();
 }
 
 /*  
