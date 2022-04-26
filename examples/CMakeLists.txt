@@ -4,7 +4,7 @@ set (excluded_examples
     ISAM2Example_SmartFactor.cpp
     VisualISAM*.cpp
     SFMExampleExpressions*.cpp
-    SFMExample_SmartFactor*.cpp
+#    SFMExample_SmartFactor*.cpp
     StereoVOExample*.cpp
     CameraResectioning.cpp
 )

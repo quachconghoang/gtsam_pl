@@ -135,6 +135,7 @@ struct BoundingConstraint2: public NoiseModelFactor2<VALUE1, VALUE2> {
   Vector evaluateError(const X1& x1, const X2& x2,
       boost::optional<Matrix&> H1 = boost::none,
       boost::optional<Matrix&> H2 = boost::none) const override {
+	  std::cout << "evaluateError\n";
     Matrix D1, D2;
     double error = value(x1, x2, D1, D2) - threshold_;
     if (H1) {

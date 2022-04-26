@@ -408,9 +408,11 @@ public:
       const X1& x1 = x.at<X1>(keys_[0]);
       const X2& x2 = x.at<X2>(keys_[1]);
       if(H) {
-        return evaluateError(x1, x2, (*H)[0], (*H)[1]);
+		auto r = evaluateError(x1, x2, (*H)[0], (*H)[1]);
+        return r;
       } else {
-        return evaluateError(x1, x2);
+		auto r = evaluateError(x1, x2);
+        return r;
       }
     } else {
       return Vector::Zero(this->dim());
