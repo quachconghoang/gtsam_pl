@@ -25,6 +25,7 @@
 #include <gtsam/nonlinear/Values.h>
 
 #include <vector>
+#include <random>
 
 using namespace std;
 using namespace gtsam;
@@ -52,8 +53,7 @@ int main(int argc, char* argv[]) {
     PinholeCamera<Cal3_S2> camera(poses[i], *K);
     for (size_t j = 0; j < points.size(); ++j) {
       Point2 measurement = camera.project(points[j]);
-      graph.emplace_shared<GenericProjectionFactor<Pose3, Point3, Cal3_S2> >(
-          measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
+      graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
     }
   }
 
@@ -68,19 +68,30 @@ int main(int argc, char* argv[]) {
 
   // Create the data structure to hold the initial estimate to the solution
   // Intentionally initialize the variables off from the ground truth
+
+  std::random_device rd;  // Will be used to obtain a seed for the random number engine
+  std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
+  std::uniform_real_distribution<> dis(-0.3, 0.3);
+  std::uniform_real_distribution<> rot_dis(-0.1, 0.1);
+
   Values initialEstimate;
   for (size_t i = 0; i < poses.size(); ++i) {
-    auto corrupted_pose = poses[i].compose(Pose3(Rot3::Rodrigues(-0.1, 0.2, 0.25), Point3(0.05, -0.10, 0.20)));
+    //auto corrupted_pose = poses[i].compose(Pose3(Rot3::Rodrigues(-0.1, 0.2, 0.25), Point3(0.05, -0.10, 0.20)));
+	  auto corrupted_pose = poses[i].compose(Pose3(Rot3::Rodrigues(rot_dis(gen), rot_dis(gen), rot_dis(gen)), Point3(dis(gen), dis(gen), dis(gen))));
     initialEstimate.insert(Symbol('x', i), corrupted_pose);
   }
   for (size_t j = 0; j < points.size(); ++j) {
-    Point3 corrupted_point = points[j] + Point3(-0.25, 0.20, 0.15);
+    //Point3 corrupted_point = points[j] + Point3(-0.25, 0.20, 0.15);
+	  Point3 corrupted_point = points[j] + Point3(dis(gen), dis(gen), dis(gen));
     initialEstimate.insert<Point3>(Symbol('l', j), corrupted_point);
   }
 //  initialEstimate.print("Initial Estimates:\n");
 
   /* Optimize the graph and print results */
-  Values result = DoglegOptimizer(graph, initialEstimate).optimize();
+  DoglegParams params;
+  params.setVerbosity("ERROR");
+  //params.print();
+  Values result = DoglegOptimizer(graph, initialEstimate, params).optimize();
 //  result.print("Final results:\n");
   cout << "initial error = " << graph.error(initialEstimate) << endl;
   cout << "final error = " << graph.error(result) << endl;

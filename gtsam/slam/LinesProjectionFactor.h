@@ -120,6 +120,7 @@ namespace gtsam {
                 } else {
                     PinholeCamera<CALIBRATION> camera(pose, *K_);
                     Point2 err = camera.project(point, H1, H2, boost::none) - measured_;
+					//std::cout << err << std::endl;
                     return err;
                 }
             } catch( CheiralityException& e) {
