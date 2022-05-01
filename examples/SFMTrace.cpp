@@ -21,14 +21,36 @@ int main(int argc, char* argv[]) {
 	PinholeCamera<Cal3_S2> camera(initPose, *K);
 
 	gtsam::Point3 point(10.0, 10.0, 10.0);
+	
+
+	Matrix36 Mpose_2(Matrix(3, 6).setZero());
+	Matrix33 Mpoint_2(Matrix(3, 3).setZero());
+	//Matrix26 Mpose = Mpose_2.block(0, 0, 2, 6);
+	//Matrix23 Mpoint = Mpoint_2.block(0, 0, 2, 3);
+
+	
+	OptionalJacobian<3, 6> D1(Mpose_2);
+	OptionalJacobian<3, 3> D2(Mpoint_2);
+	
+	
 	OptionalJacobian<2, 6> Dpose(Matrix(2,6).setZero());
-    OptionalJacobian<2, FixedDimension<Point3>::value> Dpoint(Matrix(2,3).setZero());
+	OptionalJacobian<2, 3> Dpoint(Matrix(2,3).setZero());
+
 
 	Point2 p = camera.project(point, Dpose, Dpoint, boost::none);
 
     if(Dpose)   cout << "Has Dpose: \n" << Dpose->matrix() << endl;
     if(Dpoint)  cout << "Has Dpoint: \n" << Dpoint->matrix() << endl;
 
-	cout << "p: \n" << p << endl;
+	//D1->matrix().resize(3, 3);
+
+	cout << D1->matrix() << endl;
+	cout << D2->matrix() << endl;
+
+	//if (Dpose_2)   cout << "Has Dpose: \n" << Dpose_2->matrix() << endl;
+	//if (Dpoint_2)  cout << "Has Dpoint: \n" << Dpoint_2->matrix() << endl;
+
+	//cout << "p: \n" << p << endl;
+	char k;cin >> k;
     return 0;
 }
