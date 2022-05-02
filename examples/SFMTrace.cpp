@@ -6,6 +6,7 @@
 #include <gtsam/nonlinear/Values.h>
 
 #include <vector>
+#include <conio.h>
 
 using namespace std;
 using namespace gtsam;
@@ -19,32 +20,22 @@ int main(int argc, char* argv[]) {
 	//cout << "Pose: \n" << initPose.matrix() << endl;
 	Cal3_S2::shared_ptr K(new Cal3_S2(320.0, 320.0, 0.0, 320.0, 240.0));
 	PinholeCamera<Cal3_S2> camera(initPose, *K);
-
+	
 	gtsam::Point3 point(10.0, 10.0, 10.0);
-	Matrix d1 = Matrix(2, 6).setZero();
-	Matrix d2 = Matrix(2, 3).setZero();
-	Matrix D1 = Matrix(3, 6).setZero();
-	Matrix D2 = Matrix(3, 3).setZero();
 
-	OptionalJacobian<2, 6> Dpose(d1);
-	OptionalJacobian<2, 3> Dpoint(d2);
-	OptionalJacobian<3, 6> Dpose2(D1);
-	OptionalJacobian<3, 3> Dpoint2(D2);
+	Matrix D1 = Matrix::Zero(3, 6);
+	Matrix D2 = Matrix::Zero(2, 4);
+	Matrix d1 = Matrix::Zero(2, 6);
+	Matrix d2 = Matrix::Zero(2, 3);
 
-	Point2 p = camera.project(point, Dpose, Dpoint, boost::none);
-
-    cout << "Has Dpose: \n" << Dpose->matrix() << endl;
-    cout << "Has Dpoint: \n" << Dpoint->matrix() << endl;
-
-	Dpose2->matrix().block(0, 0, 2, 6) = Dpose->matrix();
-	Dpoint2->matrix().block(0, 0, 2, 3) = Dpoint->matrix();
-	cout << "Has Dpose2: \n" << Dpose2->matrix() << endl;
-	cout << "Has Dpoint2: \n" << Dpoint2->matrix() << endl;
-
-	//if (Dpose_2)   cout << "Has Dpose: \n" << Dpose_2->matrix() << endl;
-	//if (Dpoint_2)  cout << "Has Dpoint: \n" << Dpoint_2->matrix() << endl;
+	Point2 p = camera.project(point, d1, d2, boost::none);
+	D1.block(0, 0, 2, 6) = d1;
+	D2.block(0, 0, 2, 3) = d2;
+	cout << "Has Dpose: \n" << D1 << endl;
 
 	//cout << "p: \n" << p << endl;
-	char k;cin >> k;
+	//char k;cin >> k;
+
+	//_getch();
     return 0;
 }

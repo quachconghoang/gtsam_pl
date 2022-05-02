@@ -30,6 +30,7 @@ namespace gtsam {
 
         // Keep a copy of measurement and calibration for I/O
         Point2 measured_;                    ///< 2D measurement
+		float semantic_measured_;
         boost::shared_ptr<CALIBRATION> K_;  ///< shared pointer to calibration object
         boost::optional<POSE> body_P_sensor_; ///< The pose of the sensor in the body frame
 
@@ -63,10 +64,13 @@ namespace gtsam {
          * @param K shared pointer to the constant calibration
          * @param body_P_sensor is the transform from body to sensor frame (default identity)
          */
-        LinesProjectionFactor(const Point2& measured, const SharedNoiseModel& model,
-                              Key poseKey, Key pointKey, const boost::shared_ptr<CALIBRATION>& K,
-                              boost::optional<POSE> body_P_sensor = boost::none) :
-                Base(model, poseKey, pointKey), measured_(measured), K_(K), body_P_sensor_(body_P_sensor),
+        LinesProjectionFactor(	const Point2& measured, 
+								const SharedNoiseModel& model,
+								Key poseKey, Key pointKey, 
+								const boost::shared_ptr<CALIBRATION>& K,
+								boost::optional<POSE> body_P_sensor = boost::none) :
+                Base(model, poseKey, pointKey), 
+				measured_(measured), K_(K), body_P_sensor_(body_P_sensor),
                 throwCheirality_(false), verboseCheirality_(false) {}
 
         /** Virtual destructor */
@@ -120,7 +124,9 @@ namespace gtsam {
                 } else {
                     PinholeCamera<CALIBRATION> camera(pose, *K_);
                     Point2 err = camera.project(point, H1, H2, boost::none) - measured_;
-					//std::cout << err << std::endl;
+					//std::cout << semantic_measured_ << std::endl;
+					//Matrix D1 = Matrix::Zero(2, 6);
+					//Matrix D2 = Matrix::Zero(2, 4);
                     return err;
                 }
             } catch( CheiralityException& e) {

@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <random>
+#include <conio.h>
 
 using namespace std;
 using namespace gtsam;
@@ -53,7 +54,10 @@ int main(int argc, char* argv[]) {
     PinholeCamera<Cal3_S2> camera(poses[i], *K);
     for (size_t j = 0; j < points.size(); ++j) {
       Point2 measurement = camera.project(points[j]);
-      graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
+	  float semantic_measurement = 1.0f;
+      //graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(measurement, semantic_measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
+	  graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
+
     }
   }
 
@@ -96,6 +100,12 @@ int main(int argc, char* argv[]) {
   cout << "initial error = " << graph.error(initialEstimate) << endl;
   cout << "final error = " << graph.error(result) << endl;
 
+#if defined(WIN32)
+  _getch();
+#endif
+#ifdef _MAC
+#endif //_MAC
+  
   return 0;
 }
 /* ************************************************************************* */
