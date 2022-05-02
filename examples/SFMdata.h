@@ -50,6 +50,24 @@ std::vector<gtsam::Point3> createPoints() {
   return points;
 }
 
+std::vector<gtsam::Vector4> createWeightedPoints() {
+
+	// Create the set of ground-truth landmarks
+	std::vector<gtsam::Vector4> points;
+
+	points.push_back(gtsam::Vector4(10.0, 10.0, 10.0, 1.0));
+	points.push_back(gtsam::Vector4(-10.0, 10.0, 10.0, 1.0));
+	points.push_back(gtsam::Vector4(-10.0, -10.0, 10.0, 1.0));
+	points.push_back(gtsam::Vector4(10.0, -10.0, 10.0, 1.0));
+
+	points.push_back(gtsam::Vector4(10.0, 10.0, -10.0, 1.0));
+	points.push_back(gtsam::Vector4(-10.0, 10.0, -10.0, 1.0));
+	points.push_back(gtsam::Vector4(-10.0, -10.0, -10.0, 1.0));
+	points.push_back(gtsam::Vector4(10.0, -10.0, -10.0, 1.0));
+
+	return points;
+}
+
 /* ************************************************************************* */
 std::vector<gtsam::Pose3> createPoses(
             const gtsam::Pose3& init = gtsam::Pose3(gtsam::Rot3::Ypr(M_PI/2,0,-M_PI/2), gtsam::Point3(30, 0, 0)),

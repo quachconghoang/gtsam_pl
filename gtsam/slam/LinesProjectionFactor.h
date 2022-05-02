@@ -30,6 +30,7 @@ namespace gtsam {
 
         // Keep a copy of measurement and calibration for I/O
         Point2 measured_;                    ///< 2D measurement
+		Vector4 line_measured_;
 		float semantic_measured_;
         boost::shared_ptr<CALIBRATION> K_;  ///< shared pointer to calibration object
         boost::optional<POSE> body_P_sensor_; ///< The pose of the sensor in the body frame
@@ -51,7 +52,7 @@ namespace gtsam {
 
         /// Default constructor
         LinesProjectionFactor() :
-                measured_(0, 0), throwCheirality_(false), verboseCheirality_(false) {
+                measured_(0, 0), line_measured_(0,0,0,0), throwCheirality_(false), verboseCheirality_(false) {
         }
 
         /**
@@ -64,13 +65,15 @@ namespace gtsam {
          * @param K shared pointer to the constant calibration
          * @param body_P_sensor is the transform from body to sensor frame (default identity)
          */
-        LinesProjectionFactor(	const Point2& measured, 
+        LinesProjectionFactor(	const Point2& measured,
+								const Vector4& line_measured,
 								const SharedNoiseModel& model,
 								Key poseKey, Key pointKey, 
 								const boost::shared_ptr<CALIBRATION>& K,
 								boost::optional<POSE> body_P_sensor = boost::none) :
                 Base(model, poseKey, pointKey), 
-				measured_(measured), K_(K), body_P_sensor_(body_P_sensor),
+				measured_(measured), line_measured_(line_measured),
+				K_(K), body_P_sensor_(body_P_sensor),
                 throwCheirality_(false), verboseCheirality_(false) {}
 
         /** Virtual destructor */
@@ -105,6 +108,16 @@ namespace gtsam {
         }
 
         /// Evaluate error h(x)-z and optionally derivatives
+
+static	Point2 point_on_line(Point2 a, Point2 b, Point2 p) {
+			Vector2 ap = p - a;
+			Vector2 ab = b - a;
+			Vector2 rs = a + (ap.dot(ab) / ab.dot(ab)) * ab;
+			//result = a + np.dot(ap, ab) / np.dot(ab, ab) * ab
+			return rs;
+		}
+
+
         Vector evaluateError(const Pose3& pose, const Point3 & point,
                              boost::optional<Matrix&> H1 = boost::none,
                              boost::optional<Matrix&> H2 = boost::none) const override {
@@ -123,8 +136,14 @@ namespace gtsam {
                     }
                 } else {
                     PinholeCamera<CALIBRATION> camera(pose, *K_);
-                    Point2 err = camera.project(point, H1, H2, boost::none) - measured_;
-					//std::cout << semantic_measured_ << std::endl;
+					Point2 p = camera.project(point, H1, H2, boost::none);
+					Point2 pl = point_on_line(	Point2(line_measured_[0], line_measured_[1]), 
+												Point2(line_measured_[2], line_measured_[3]),
+												p);
+					Point2 err = p - measured_;
+                    //Point2 err = 0.8 * (p - measured_) + 0.2 * (pl-measured_);
+					//std::cout <<  << std::endl;
+					//std::cout << line_measured_.transpose() << std::endl;
 					//Matrix D1 = Matrix::Zero(2, 6);
 					//Matrix D2 = Matrix::Zero(2, 4);
                     return err;

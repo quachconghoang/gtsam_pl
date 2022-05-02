@@ -40,6 +40,8 @@ int main(int argc, char* argv[]) {
   auto measurementNoise= noiseModel::Isotropic::Sigma(2, 1.0);  // one pixel in u and v
   // Create the set of ground-truth landmarks
   vector<Point3> points = createPoints();
+  vector<Vector4> w_points = createWeightedPoints();
+
   // Create the set of ground-truth poses
   vector<Pose3> poses = createPoses();
   // Create a factor graph
@@ -54,24 +56,24 @@ int main(int argc, char* argv[]) {
     PinholeCamera<Cal3_S2> camera(poses[i], *K);
     for (size_t j = 0; j < points.size(); ++j) {
       Point2 measurement = camera.project(points[j]);
+
+	  int line_num = j / 2;
+	  Point2 p0 = camera.project(points[line_num * 2]);
+	  Point2 p1 = camera.project(points[line_num * 2 + 1]);
+
 	  float semantic_measurement = 1.0f;
+	  Vector4 line_measurement(p0[0], p0[1], p1[0], p1[1]);
       //graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(measurement, semantic_measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
-	  graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
+	  //graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(measurement, measurementNoise, Symbol('x', i), Symbol('l', j), K);
+	  graph.emplace_shared<LinesProjectionFactor<Pose3, Point3, Cal3_S2> >(measurement, line_measurement , measurementNoise, Symbol('x', i), Symbol('l', j), K);
 
     }
   }
 
-  // Because the structure-from-motion problem has a scale ambiguity, the
-  // problem is still under-constrained Here we add a prior on the position of
-  // the first landmark. This fixes the scale by indicating the distance between
-  // the first camera and the first landmark. All other landmark positions are
-  // interpreted using this scale.
+
   auto pointNoise = noiseModel::Isotropic::Sigma(3, 0.1);
   graph.addPrior(Symbol('l', 0), points[0],pointNoise);  // add directly to graph
 //  graph.print("Factor Graph:\n");
-
-  // Create the data structure to hold the initial estimate to the solution
-  // Intentionally initialize the variables off from the ground truth
 
   std::random_device rd;  // Will be used to obtain a seed for the random number engine
   std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()

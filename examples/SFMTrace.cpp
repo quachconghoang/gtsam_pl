@@ -13,6 +13,16 @@ using namespace gtsam;
 
 //Matrix kTestMatrix = (Matrix23() << 11,12,13,21,22,23).finished(); //Apple M1 build Error
 
+Point2 point_on_line(Point2 a, Point2 b, Point2 p) {
+	Vector2 ap = p - a;
+	Vector2 ab = b - a;
+	Vector2 rs = a + (ap.dot(ab) / ab.dot(ab)) * ab;
+	//result = a + np.dot(ap, ab) / np.dot(ab, ab) * ab
+	return rs;
+}
+
+
+
 int main(int argc, char* argv[]) {
 	
 	gtsam::Pose3 initPose = gtsam::Pose3(gtsam::Rot3::Ypr(M_PI / 2, 0, -M_PI / 2), gtsam::Point3(30, 0, 0));
